@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block title %}ログイン{% endblock %}
+{% block content %}
+<div style="max-width: 400px; margin: 50px auto; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <h1 style="text-align: center; margin-bottom: 2rem;">ログイン</h1>
+    {% with messages = get_flashed_messages(category_filter=['error']) %}
+        {% if messages %}
+            {% for message in messages %}
+                <div style="background: #fee; color: #c33; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    <form method="POST">
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">メールアドレス</label>
+            <input type="email" name="email" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">パスワード</label>
+            <input type="password" name="password" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+        <button type="submit" style="width: 100%; padding: 0.75rem; background: #3498db; color: white; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; font-weight: 600;">ログイン</button>
+    </form>
+    <p style="text-align: center; margin-top: 1.5rem; color: #666;">テスト用ログイン情報:<br>Email: admin@example.com<br>Password: Admin@12345</p>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block title %}ユーザーを編集{% endblock %}
+{% block content %}
+<h1>ユーザーを編集</h1>
+<form method="POST" style="max-width: 500px; background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">ユーザー名 <span style="color: red;">*</span></label>
+        <input type="text" name="username" required value="{{ user.username }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">メールアドレス <span style="color: red;">*</span></label>
+        <input type="email" name="email" required value="{{ user.email }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">パスワード <span style="color: #999;">(変更する場合のみ入力)</span></label>
+        <input type="password" name="password" placeholder="新しいパスワードを入力..." style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="display: flex; gap: 0.5rem;">
+        <button type="submit" style="flex: 1; padding: 0.75rem 1.5rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">更新</button>
+        <a href="{{ url_for('user_management') }}" style="flex: 1; padding: 0.75rem 1.5rem; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px; text-align: center; font-weight: 600;">キャンセル</a>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "layout.html" %}
+{% block title %}倉庫確認{% endblock %}
+{% block content %}
+<h1>倉庫確認</h1>
+
+<div style="margin-bottom: 2rem;">
+    <h2 style="border-bottom: 2px solid #e74c3c; padding-bottom: 1rem; color: #e74c3c;">📦 出庫待ち（{{ pending_orders|length }}件）</h2>
+    
+    {% if pending_orders %}
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for order in pending_orders %}
+        <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 4px solid #e74c3c;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">グループ</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1rem;">{{ order.stock.group.name if order.stock.group else '-' }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">商品名</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1rem;">{{ order.stock.product_name }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">数量</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1.2rem; color: #e74c3c;">{{ order.quantity }}個</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">出荷先</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1rem;">{{ order.destination }}</p>
+                </div>
+                <button onclick="confirmOrder({{ order.id }})" style="padding: 0.75rem 1.5rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">✅ 確認</button>
+            </div>
+            <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">受付: {{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="padding: 2rem; text-align: center; color: #999; background: white; border-radius: 8px;">出庫待ちのオーダーはありません</p>
+    {% endif %}
+</div>
+
+<div style="margin-bottom: 2rem;">
+    <h2 style="border-bottom: 2px solid #f39c12; padding-bottom: 1rem; color: #f39c12;">📋 倉庫確認済み（{{ confirmed_orders|length }}件）</h2>
+    
+    {% if confirmed_orders %}
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for order in confirmed_orders %}
+        <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 4px solid #f39c12;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">グループ</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1rem;">{{ order.stock.group.name if order.stock.group else '-' }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">商品名</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1rem;">{{ order.stock.product_name }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">数量</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1.2rem; color: #f39c12;">{{ order.quantity }}個</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">出荷先</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1rem;">{{ order.destination }}</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="completeOrder({{ order.id }})" style="padding: 0.75rem 1.5rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;">✓ 完了</button>
+                    <button onclick="revertOrder({{ order.id }})" style="padding: 0.75rem 1.5rem; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; white-space: nowrap;">↶ 戻す</button>
+                </div>
+            </div>
+            <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">確認: {{ order.warehouse_confirmed_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="padding: 2rem; text-align: center; color: #999; background: white; border-radius: 8px;">倉庫確認済みのオーダーはありません</p>
+    {% endif %}
+</div>
+
+<div>
+    <h2 style="border-bottom: 2px solid #27ae60; padding-bottom: 1rem; color: #27ae60;">✅ 出庫完了（{{ completed_orders|length }}件）</h2>
+    
+    {% if completed_orders %}
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for order in completed_orders %}
+        <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 4px solid #27ae60; opacity: 0.8;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">グループ</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1rem;">{{ order.stock.group.name if order.stock.group else '-' }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">商品名</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1rem;">{{ order.stock.product_name }}</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">数量</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1.2rem; color: #27ae60;">{{ order.quantity }}個</p>
+                </div>
+                <div>
+                    <p style="margin: 0; font-size: 0.8rem; color: #7f8c8d;">出荷先</p>
+                    <p style="margin: 0; font-weight: 600; font-size: 1rem;">{{ order.destination }}</p>
+                </div>
+                <button onclick="revertOrder({{ order.id }})" style="padding: 0.75rem 1.5rem; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">↶ 戻す</button>
+            </div>
+            <p style="margin: 0; color: #7f8c8d; font-size: 0.85rem;">完了: {{ order.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="padding: 2rem; text-align: center; color: #999; background: white; border-radius: 8px;">出庫完了のオーダーはありません</p>
+    {% endif %}
+</div>
+
+<script>
+function confirmOrder(orderId) {
+    fetch(`/warehouse/${orderId}/confirm`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+                location.reload();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        });
+}
+
+function completeOrder(orderId) {
+    fetch(`/warehouse/${orderId}/complete`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+                location.reload();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        });
+}
+
+function revertOrder(orderId) {
+    if (confirm('ステータスを戻しますか？')) {
+        fetch(`/warehouse/${orderId}/revert`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ' + data.message);
+                    location.reload();
+                } else {
+                    alert('❌ ' + data.message);
+                }
+            });
+    }
+}
+</script>
+{% endblock %}

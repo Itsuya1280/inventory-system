@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+{% block title %}出庫を追加{% endblock %}
+{% block content %}
+<h1>出庫を追加</h1>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+    <div>
+        <form method="POST" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="margin-top: 0;">出庫情報</h2>
+            <div style="margin-bottom: 1.5rem;"><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">グループ <span style="color: red;">*</span></label><select name="group_id" id="groupSelect" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;"><option value="">--- グループを選択してください ---</option>{% for group in groups %}<option value="{{ group.id }}">{{ group.name }}</option>{% endfor %}</select></div>
+            <div style="margin-bottom: 1.5rem;"><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">枝番 <span style="color: red;">*</span></label><select name="stock_id" id="stockSelect" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;"><option value="">--- 枝番を選択してください ---</option></select></div>
+            <div style="margin-bottom: 1.5rem;"><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">数量 <span style="color: red;">*</span></label><input type="number" name="quantity" required min="1" placeholder="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;"></div>
+            <div style="margin-bottom: 1.5rem;"><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">出荷先 <span style="color: red;">*</span></label><input type="text" name="destination" required placeholder="例: 〇〇会社" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;"></div>
+            <div style="display: flex; gap: 0.5rem;"><button type="submit" style="flex: 1; padding: 0.75rem 1.5rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">出庫する</button><a href="{{ url_for('outbound_index') }}" style="flex: 1; padding: 0.75rem 1.5rem; background: #95a5a6; color: white; text-decoration: none; border-radius: 4px; text-align: center; font-weight: 600;">キャンセル</a></div>
+        </form>
+    </div>
+    <div>
+        <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);"><h2 style="margin-top: 0;">枝番の在庫</h2><table id="stocksTable" style="width: 100%; border-collapse: collapse;"><thead><tr style="background: #f5f5f5; border-bottom: 1px solid #ddd;"><th style="padding: 0.75rem; text-align: left;">枝番</th><th style="padding: 0.75rem; text-align: right;">在庫</th></tr></thead><tbody style="display: none;" id="stocksList"></tbody><tbody id="emptyMessage"><tr><td colspan="2" style="padding: 1.5rem; text-align: center; color: #999;">グループを選択してください</td></tr></tbody></table></div>
+    </div>
+</div>
+<script>
+document.getElementById('groupSelect').addEventListener('change', function() {
+    const groupId = this.value;
+    const stockSelect = document.getElementById('stockSelect');
+    const stocksList = document.getElementById('stocksList');
+    const emptyMessage = document.getElementById('emptyMessage');
+    stockSelect.innerHTML = '<option value="">--- 枝番を選択してください ---</option>';
+    if (!groupId) { stocksList.style.display = 'none'; emptyMessage.style.display = ''; return; }
+    fetch(`{{ url_for('outbound_get_stocks', group_id='GROUP_ID') }}`.replace('GROUP_ID', groupId))
+        .then(response => response.json())
+        .then(data => {
+            stocksList.innerHTML = '';
+            if (data.length === 0) { emptyMessage.style.display = ''; stocksList.style.display = 'none'; }
+            else {
+                data.forEach(stock => {
+                    stocksList.innerHTML += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 0.75rem;">${stock.product_name}</td><td style="padding: 0.75rem; text-align: right;">${stock.quantity}個</td></tr>`;
+                    const option = document.createElement('option');
+                    option.value = stock.id;
+                    option.textContent = `${stock.product_name} (${stock.quantity}個)`;
+                    stockSelect.appendChild(option);
+                });
+                emptyMessage.style.display = 'none'; stocksList.style.display = '';
+            }
+        })
+        .catch(error => console.error('Error:', error));
+});
+</script>
+{% endblock %}

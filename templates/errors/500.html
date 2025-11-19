@@ -1,0 +1,7 @@
+{% extends "layout.html" %}
+{% block title %}エラー{% endblock %}
+{% block content %}
+<h1>500 - サーバーエラー</h1>
+<p>申し訳ありません。エラーが発生しました。</p>
+<a href="{{ url_for('index') }}">ホームに戻る</a>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "layout.html" %}
+{% block title %}ページが見つかりません{% endblock %}
+{% block content %}
+<h1>404 - ページが見つかりません</h1>
+<p>申し訳ありません。お探しのページは見つかりませんでした。</p>
+<a href="{{ url_for('index') }}">ホームに戻る</a>
+{% endblock %}

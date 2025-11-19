@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+{% block title %}マスタ{% endblock %}
+{% block content %}
+<h1>品名マスタ</h1>
+<p style="color: #7f8c8d; margin-bottom: 1rem;">💡 グループを上下にドラッグして順序を変更できます</p>
+
+<a href="{{ url_for('item_master_new_group') }}" style="display: inline-block; padding: 0.75rem 1.5rem; background: #3498db; color: white; text-decoration: none; border-radius: 4px; margin-bottom: 1rem;">グループを追加</a>
+
+<div id="groupsList" style="display: flex; flex-direction: column; gap: 1rem;">
+    {% for item in group_data %}
+    <div class="group-item" draggable="true" data-group-id="{{ item.group.id }}" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); cursor: grab; user-select: none; transition: all 0.3s ease;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-size: 1.5rem; color: #bdc3c7;">≡</span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.1rem;">{{ item.group.name }}</h3>
+                        <p style="margin: 0.25rem 0 0 0; color: #7f8c8d; font-size: 0.9rem;">作成: {{ item.group.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span style="display: inline-block; padding: 0.5rem 1rem; background: #d4edda; color: #155724; border-radius: 4px; font-weight: 600;">{{ item.count }}個</span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div style="padding: 2rem; text-align: center; color: #999; background: white; border-radius: 8px;">
+        グループがありません
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.group-item {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    cursor: grab;
+    user-select: none;
+    transition: all 0.3s ease;
+}
+
+.group-item:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.group-item:active {
+    cursor: grabbing;
+}
+
+.group-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.group-item.drag-over {
+    background: #ecf0f1;
+    border: 2px dashed #3498db;
+    padding: calc(1.5rem - 2px);
+}
+</style>
+
+<script>
+let draggedElement = null;
+const groupsList = document.getElementById('groupsList');
+const items = document.querySelectorAll('.group-item');
+
+items.forEach(item => {
+    item.addEventListener('dragstart', handleDragStart);
+    item.addEventListener('dragend', handleDragEnd);
+    item.addEventListener('dragover', handleDragOver);
+    item.addEventListener('drop', handleDrop);
+    item.addEventListener('dragenter', handleDragEnter);
+    item.addEventListener('dragleave', handleDragLeave);
+});
+
+function handleDragStart(e) {
+    draggedElement = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    items.forEach(item => item.classList.remove('drag-over'));
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    if (this !== draggedElement) {
+        this.classList.add('drag-over');
+    }
+}
+
+function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    if (draggedElement !== this) {
+        // 要素の入れ替え
+        const allItems = [...groupsList.querySelectorAll('.group-item')];
+        const draggedIndex = allItems.indexOf(draggedElement);
+        const targetIndex = allItems.indexOf(this);
+        
+        if (draggedIndex < targetIndex) {
+            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedElement, this);
+        }
+        
+        // 順序をサーバーに保存
+        saveOrder();
+    }
+    
+    this.classList.remove('drag-over');
+    return false;
+}
+
+function saveOrder() {
+    const orders = [];
+    document.querySelectorAll('.group-item').forEach(item => {
+        orders.push(item.dataset.groupId);
+    });
+    
+    fetch('/item_master/api/reorder', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orders: orders })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ 並べ替えを保存しました');
+        } else {
+            alert('エラー: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('エラーが発生しました');
+    });
+}
+</script>
+{% endblock %}

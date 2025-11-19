@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% block title %}履歴{% endblock %}
+{% block content %}
+<h1>在庫履歴</h1>
+<div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
+    <h3 style="margin-top: 0;">フィルター</h3>
+    <form method="GET" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 1rem; align-items: end; margin-bottom: 1rem;">
+        <div><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">商品名検索</label><input type="text" name="search_product" placeholder="商品名を入力..." value="{{ search_product }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>
+        <div><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">グループ</label><select name="group" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"><option value="">すべてのグループ</option>{% for group in groups %}<option value="{{ group.id }}" {% if group_filter == group.id %}selected{% endif %}>{{ group.name }}</option>{% endfor %}</select></div>
+        <div><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">ユーザー</label><select name="user" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"><option value="">すべてのユーザー</option>{% for user in users %}<option value="{{ user.id }}" {% if user_filter == user.id %}selected{% endif %}>{{ user.username }}</option>{% endfor %}</select></div>
+        <div><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">種別</label><select name="type" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"><option value="">すべて</option><option value="inbound" {% if transaction_type == 'inbound' %}selected{% endif %}>入庫</option><option value="outbound" {% if transaction_type == 'outbound' %}selected{% endif %}>出庫</option><option value="adjustment" {% if transaction_type == 'adjustment' %}selected{% endif %}>調整</option></select></div>
+        <button type="submit" style="padding: 0.75rem 1.5rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">検索</button>
+    </form>
+
+    <form method="GET" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+        <div><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">出荷先検索</label><input type="text" name="destination" placeholder="出荷先を入力..." value="{{ destination_filter }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>
+        <div><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">開始日時</label><input type="date" name="start_date" value="{{ start_date }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>
+        <div><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">終了日時</label><input type="date" name="end_date" value="{{ end_date }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>
+        <button type="submit" style="padding: 0.75rem 1.5rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">検索</button>
+    </form>
+</div>
+
+<table style="width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr style="background: #f0f0f0; border-bottom: 2px solid #ddd;">
+            <th style="padding: 1rem; text-align: left;">日時</th>
+            <th style="padding: 1rem; text-align: left;">グループ</th>
+            <th style="padding: 1rem; text-align: left;">商品名</th>
+            <th style="padding: 1rem; text-align: left;">種別</th>
+            <th style="padding: 1rem; text-align: right;">数量</th>
+            <th style="padding: 1rem; text-align: left;">ユーザー</th>
+            <th style="padding: 1rem; text-align: left;">備考</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in history %}
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 1rem; white-space: nowrap; font-size: 0.9rem;">{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            <td style="padding: 1rem;">
+                <span style="display: inline-block; padding: 0.25rem 0.75rem; background: #e3f2fd; color: #1976d2; border-radius: 4px; font-size: 0.9rem;">{{ item.stock.group.name if item.stock.group else '-' }}</span>
+            </td>
+            <td style="padding: 1rem;">{{ item.stock.product_name }}</td>
+            <td style="padding: 1rem;">
+                <span style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600; font-size: 0.85rem; {% if item.transaction_type == 'inbound' %}background: #d4edda; color: #155724;{% elif item.transaction_type == 'outbound' %}background: #f8d7da; color: #721c24;{% else %}background: #e2e3e5; color: #383d41;{% endif %}">{{ 'IN' if item.transaction_type == 'inbound' else 'OUT' if item.transaction_type == 'outbound' else '調' }}</span>
+            </td>
+            <td style="padding: 1rem; text-align: right; font-weight: 600;">
+                {% if item.quantity_change > 0 %}<span style="color: #27ae60;">+{{ item.quantity_change }}</span>{% else %}<span style="color: #e74c3c;">{{ item.quantity_change }}</span>{% endif %}
+            </td>
+            <td style="padding: 1rem;">
+                <span style="display: inline-block; padding: 0.25rem 0.75rem; background: #f3e5f5; color: #6a1b9a; border-radius: 4px; font-size: 0.9rem; font-weight: 600;">{{ item.user.username if item.user else '-' }}</span>
+            </td>
+            <td style="padding: 1rem; font-size: 0.9rem;">{{ item.notes if item.notes else '-' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7" style="padding: 2rem; text-align: center; color: #999;">履歴がありません</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div style="margin-top: 1rem; padding: 1rem; background: #ecf0f1; border-radius: 4px; text-align: center; color: #7f8c8d;">
+    合計 <strong>{{ history|length }}</strong> 件の履歴
+</div>
+{% endblock %}

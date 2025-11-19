@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% block title %}在庫編集{% endblock %}
+{% block content %}
+<h1>在庫編集</h1>
+<form method="POST" style="max-width: 600px; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">グループ <span style="color: red;">*</span></label>
+        <select name="group_id" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+            <option value="">選択してください</option>
+            {% for group in groups %}
+            <option value="{{ group.id }}" {% if stock.group_id == group.id %}selected{% endif %}>{{ group.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">商品名（枝番） <span style="color: red;">*</span></label>
+        <input type="text" name="product_name" required value="{{ stock.product_name }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">仕入先</label>
+        <input type="text" name="supplier" value="{{ stock.supplier or '' }}" placeholder="例: A社、B商会" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">数量 <span style="color: red;">*</span></label>
+        <input type="number" name="quantity" required value="{{ stock.quantity }}" min="0" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box;">
+    </div>
+    
+    <div style="display: flex; gap: 1rem;">
+        <button type="submit" style="flex: 1; padding: 0.75rem 1.5rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">更新</button>
+        <a href="{{ url_for('inventory_list') }}" style="flex: 1; padding: 0.75rem 1.5rem; background: #95a5a6; color: white; text-decoration: none; text-align: center; border-radius: 4px; font-weight: 600;">キャンセル</a>
+    </div>
+</form>
+{% endblock %}

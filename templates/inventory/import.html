@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block title %}Excelアップロード{% endblock %}
+{% block content %}
+<h1>在庫をExcelで一括変更</h1>
+
+<div style="max-width: 600px; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <div style="background: #e8f5e9; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #27ae60; margin-bottom: 1.5rem;">
+        <h3 style="margin-top: 0; color: #27ae60;">使用方法</h3>
+        <ol style="margin: 0; padding-left: 1.5rem;">
+            <li>「Excel出力」ボタンで現在の在庫一覧をダウンロード</li>
+            <li>Excelファイルを編集（数量など）</li>
+            <li>IDと数量の列は必ず入力してください</li>
+            <li>編集済みファイルをアップロード</li>
+            <li>変更内容が自動で反映されます</li>
+        </ol>
+    </div>
+    
+    <form method="POST" enctype="multipart/form-data">
+        <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 600; margin-bottom: 1rem;">Excelファイル（.xlsx） <span style="color: red;">*</span></label>
+            <div style="border: 2px dashed #3498db; padding: 2rem; border-radius: 8px; text-align: center; cursor: pointer;" id="drop-zone">
+                <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">📁</p>
+                <p style="margin: 0; color: #3498db; font-weight: 600;">ファイルをここにドラッグ＆ドロップ</p>
+                <p style="margin: 0.5rem 0 0 0; color: #7f8c8d; font-size: 0.9rem;">または下のボタンをクリック</p>
+            </div>
+            <input type="file" id="file-input" name="file" accept=".xlsx" style="display: none;" required>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" style="flex: 1; padding: 1rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 1rem;">アップロード</button>
+            <a href="{{ url_for('inventory_list') }}" style="flex: 1; padding: 1rem; background: #95a5a6; color: white; text-decoration: none; text-align: center; border-radius: 4px; font-weight: 600; font-size: 1rem;">キャンセル</a>
+        </div>
+    </form>
+    
+    <div style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; border-radius: 8px; border-left: 4px solid #f39c12;">
+        <h4 style="margin-top: 0; color: #856404;">⚠️ 注意</h4>
+        <ul style="margin: 0; padding-left: 1.5rem; color: #856404;">
+            <li>IDと数量の列は絶対に削除しないでください</li>
+            <li>ID の値は変更しないでください</li>
+            <li>数量には数値のみを入力してください</li>
+            <li>変更内容は履歴に記録されます</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+// ドラッグアンドドロップ
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.style.background = '#e3f2fd';
+    dropZone.style.borderColor = '#2196F3';
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.style.background = '';
+    dropZone.style.borderColor = '#3498db';
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    fileInput.files = e.dataTransfer.files;
+    if (fileInput.files.length > 0) {
+        dropZone.innerHTML = '✅ ' + fileInput.files[0].name + ' を選択しました';
+        dropZone.style.borderColor = '#27ae60';
+    }
+});
+
+// クリックでファイル選択
+dropZone.addEventListener('click', () => {
+    fileInput.click();
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        dropZone.innerHTML = '✅ ' + e.target.files[0].name + ' を選択しました';
+        dropZone.style.borderColor = '#27ae60';
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+{% block title %}QRコード印刷{% endblock %}
+{% block content %}
+<h1>QRコード印刷</h1>
+<p style="color: #7f8c8d; margin-bottom: 1rem;">A4用紙に最大6枚のQRコードを印刷できます</p>
+
+<div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+    <button id="print-btn" onclick="window.print()" style="padding: 0.75rem 1.5rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 1rem;">🖨️ 印刷</button>
+    <button onclick="history.back()" style="padding: 0.75rem 1.5rem; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 1rem;">戻る</button>
+    <span id="loading" style="padding: 0.75rem 1.5rem; background: #f39c12; color: white; border-radius: 4px; font-weight: 600;">⏳ QRコード生成中...</span>
+</div>
+
+<div id="qr-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; padding: 1rem; background: white;">
+    {% for stock in stocks %}
+    <div class="qr-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; border: 1px solid #ddd; border-radius: 8px; page-break-inside: avoid; min-height: 350px;">
+        <div id="qr-{{ stock.id }}" style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; width: 200px; height: 200px;"><span style="color: #999;">読込中...</span></div>
+        <p style="text-align: center; margin: 0.5rem 0; font-weight: 600; font-size: 0.95rem;">{{ stock.group.name if stock.group else '-' }}</p>
+        <p style="text-align: center; margin: 0; font-size: 1.1rem; font-weight: bold;">{{ stock.product_name }}</p>
+        <p style="text-align: center; margin: 0.5rem 0; color: #7f8c8d; font-size: 0.9rem;">数量: {{ stock.quantity }}個</p>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+    }
+    main {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    button {
+        display: none !important;
+    }
+    #loading {
+        display: none !important;
+    }
+    header {
+        display: none !important;
+    }
+    nav {
+        display: none !important;
+    }
+    h1 {
+        display: none !important;
+    }
+    > p {
+        display: none !important;
+    }
+    #qr-container {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .qr-card {
+        page-break-inside: avoid !important;
+        padding: 20mm !important;
+        border: 1px solid #ddd !important;
+        margin: 0 !important;
+        min-height: auto;
+    }
+}
+</style>
+
+<script>
+let loadedCount = 0;
+const totalCount = {{ stocks|length }};
+
+// QRコードを生成
+const stockIds = [{% for stock in stocks %}'{{ stock.id }}'{% if not loop.last %},{% endif %}{% endfor %}];
+
+Promise.all(stockIds.map(stockId => 
+    fetch('/api/qr/generate/' + stockId)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const container = document.getElementById('qr-' + stockId);
+                container.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = data.qr_code;
+                img.style.width = '200px';
+                img.style.height = '200px';
+                container.appendChild(img);
+            } else {
+                console.error('QRコード生成失敗:', data.message);
+            }
+            loadedCount++;
+            if (loadedCount === totalCount) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('print-btn').style.display = 'inline-block';
+            }
+        })
+        .catch(err => {
+            console.error('エラー:', err);
+            loadedCount++;
+            if (loadedCount === totalCount) {
+                document.getElementById('loading').style.display = 'none';
+            }
+        })
+)).catch(err => console.error('エラー:', err));
+</script>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "layout.html" %}
+{% block title %}在庫一覧{% endblock %}
+{% block content %}
+<h1>在庫一覧</h1>
+<div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
+    <h3 style="margin-top: 0;">フィルター</h3>
+    <form method="GET" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+        <div><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">商品名検索</label><input type="text" name="search" placeholder="商品名を入力..." value="{{ search }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></div>
+        <div><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">グループ</label><select name="group" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"><option value="">すべてのグループ</option>{% for group in groups %}<option value="{{ group.id }}" {% if group_filter == group.id %}selected{% endif %}>{{ group.name }}</option>{% endfor %}</select></div>
+        <div><label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">仕入先</label><select name="supplier" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"><option value="">すべての仕入先</option>{% for supplier in suppliers %}<option value="{{ supplier }}" {% if supplier_filter == supplier %}selected{% endif %}>{{ supplier }}</option>{% endfor %}</select></div>
+        <button type="submit" style="padding: 0.75rem 1.5rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">検索</button>
+    </form>
+</div>
+
+<div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+    <button onclick="selectAll()" style="padding: 0.75rem 1.5rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">すべて選択</button>
+    <button onclick="deselectAll()" style="padding: 0.75rem 1.5rem; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">選択解除</button>
+    <button onclick="printQRCodes()" style="padding: 0.75rem 1.5rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">QRコード印刷（選択した商品）</button>
+    <a href="{{ url_for('inventory_export') }}" style="display: inline-block; padding: 0.75rem 1.5rem; background: #16a085; color: white; text-decoration: none; border-radius: 4px; font-weight: 600;">📥 Excel出力</a>
+    <a href="{{ url_for('inventory_import') }}" style="display: inline-block; padding: 0.75rem 1.5rem; background: #2980b9; color: white; text-decoration: none; border-radius: 4px; font-weight: 600;">📤 Excelアップロード</a>
+    <span id="selected-count" style="padding: 0.75rem 1.5rem; background: #f39c12; color: white; border-radius: 4px; font-weight: 600;">選択: 0個</span>
+</div>
+
+<table style="width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr style="background: #f0f0f0; border-bottom: 2px solid #ddd;">
+            <th style="padding: 1rem; text-align: center; width: 50px;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
+            <th style="padding: 1rem; text-align: left;">グループ</th>
+            <th style="padding: 1rem; text-align: left;">商品名</th>
+            <th style="padding: 1rem; text-align: left;">仕入先</th>
+            <th style="padding: 1rem; text-align: right;">数量</th>
+            <th style="padding: 1rem; text-align: center;">操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stock in stocks %}
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 1rem; text-align: center;"><input type="checkbox" class="stock-checkbox" value="{{ stock.id }}" onchange="updateCount()"></td>
+            <td style="padding: 1rem;">{{ stock.group.name if stock.group else '-' }}</td>
+            <td style="padding: 1rem;">{{ stock.product_name }}</td>
+            <td style="padding: 1rem;">
+                {% if stock.supplier %}<span style="display: inline-block; padding: 0.25rem 0.75rem; background: #fff3cd; color: #856404; border-radius: 4px; font-size: 0.9rem;">{{ stock.supplier }}</span>{% else %}<span style="color: #999;">-</span>{% endif %}
+            </td>
+            <td style="padding: 1rem; text-align: right;">{{ stock.quantity }}個</td>
+            <td style="padding: 1rem; text-align: center;">
+                <a href="{{ url_for('inventory_edit', stock_id=stock.id) }}" style="display: inline-block; padding: 0.5rem 1rem; background: #3498db; color: white; text-decoration: none; border-radius: 4px; margin-right: 0.5rem; font-size: 0.9rem;">編集</a>
+                <a href="{{ url_for('qr_detail', stock_id=stock.id) }}" style="display: inline-block; padding: 0.5rem 1rem; background: #1abc9c; color: white; text-decoration: none; border-radius: 4px; margin-right: 0.5rem; font-size: 0.9rem;">QR詳細</a>
+                <form method="POST" action="{{ url_for('inventory_delete', stock_id=stock.id) }}" style="display: inline;">
+                    <button type="submit" onclick="return confirm('削除しますか?')" style="padding: 0.5rem 1rem; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">削除</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="6" style="padding: 2rem; text-align: center; color: #999;">在庫がありません</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function selectAll() {
+    document.querySelectorAll('.stock-checkbox').forEach(cb => cb.checked = true);
+    updateCount();
+}
+
+function deselectAll() {
+    document.querySelectorAll('.stock-checkbox').forEach(cb => cb.checked = false);
+    updateCount();
+}
+
+function toggleSelectAll() {
+    const checked = document.getElementById('selectAllCheckbox').checked;
+    document.querySelectorAll('.stock-checkbox').forEach(cb => cb.checked = checked);
+    updateCount();
+}
+
+function updateCount() {
+    const count = document.querySelectorAll('.stock-checkbox:checked').length;
+    document.getElementById('selected-count').textContent = '選択: ' + count + '個';
+}
+
+function printQRCodes() {
+    const checked = document.querySelectorAll('.stock-checkbox:checked');
+    if (checked.length === 0) {
+        alert('商品を選択してください');
+        return;
+    }
+    
+    if (checked.length > 6) {
+        alert('最大6個まで選択してください');
+        return;
+    }
+    
+    const ids = Array.from(checked).map(cb => cb.value).join(',');
+    window.location.href = '/inventory/qr?ids=' + ids;
+}
+</script>
+{% endblock %}
